@@ -12,6 +12,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Proxy\ClassProxy;
 
+use Go\Proxy\FunctionProxy;
 use Go\Proxy\TraitProxy;
 use TokenReflection\Broker;
 use TokenReflection\ReflectionClass as ParsedClass;
@@ -130,6 +131,16 @@ class WeavingTransformer extends BaseSourceTransformer
                     // Add child to source
                     $metadata->source .= $child;
                 }
+            }
+
+            $functionAdvices = $this->container->getAdvicesForFunctions($namespace);
+            if ($functionAdvices) {
+                $functionFileName = 'functions' . $namespace->getName() . '.php';
+                if (!file_exists($functionFileName)) {
+                    $source = FunctionProxy::generate($namespace, $functionAdvices);
+                    file_put_contents($functionFileName, $source);
+                }
+                $metadata->source .= 'include_once ' . var_export($functionFileName, true) . ';'. PHP_EOL;
             }
         }
     }
